@@ -1,0 +1,267 @@
+:root {
+  --bg: #f4f6f8;
+  --ink: #101722;
+  --brand: #1f4c78;
+  --brand-2: #d64045;
+  --card: #ffffff;
+  --line: #d6dee8;
+  --ok: #177245;
+  --warn: #9c6b00;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: "Source Sans 3", sans-serif;
+  color: var(--ink);
+  background: linear-gradient(180deg, #e9eef3 0%, var(--bg) 30%, #ffffff 100%);
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: "Oswald", sans-serif;
+  margin: 0;
+  letter-spacing: 0.02em;
+}
+
+.hero {
+  padding: 1.25rem 1rem 3rem;
+  background: radial-gradient(circle at 70% 20%, #35597b 0%, #16283d 55%, #0e1723 100%);
+  color: #fff;
+}
+
+.top-nav {
+  max-width: 1080px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.nav-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.top-nav h1 {
+  font-size: clamp(1.4rem, 2vw, 2rem);
+}
+
+.hero-content {
+  max-width: 1080px;
+  margin: 2.5rem auto 0;
+}
+
+.badge {
+  display: inline-block;
+  margin: 0 0 0.75rem;
+  font-weight: 700;
+  font-size: 0.88rem;
+  text-transform: uppercase;
+  color: #ffd55a;
+}
+
+.hero-content h2 {
+  font-size: clamp(2rem, 5vw, 3.5rem);
+  line-height: 1;
+  max-width: 12ch;
+  margin-bottom: 0.9rem;
+}
+
+.hero-content p {
+  max-width: 56ch;
+  font-size: 1.1rem;
+}
+
+.btn {
+  display: inline-block;
+  text-decoration: none;
+  font-weight: 700;
+  border-radius: 999px;
+  padding: 0.7rem 1.2rem;
+  border: none;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.btn:hover {
+  transform: translateY(-2px);
+}
+
+.btn-main {
+  color: #fff;
+  background: linear-gradient(90deg, var(--brand-2) 0%, #ad1825 100%);
+  box-shadow: 0 10px 24px rgba(214, 64, 69, 0.35);
+}
+
+.btn-outline {
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  background: transparent;
+}
+
+.btn-subtle {
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.section {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 2.2rem 1rem;
+}
+
+.section-alt {
+  padding-top: 1rem;
+}
+
+.section-title h3 {
+  font-size: clamp(1.5rem, 2.5vw, 2.2rem);
+}
+
+.section-title p {
+  margin-top: 0.4rem;
+  color: #344358;
+}
+
+.auth-section {
+  border-bottom: 1px solid var(--line);
+}
+
+.status-message {
+  margin-top: 0.5rem;
+  font-weight: 600;
+  color: var(--warn);
+}
+
+.cards {
+  margin-top: 1.5rem;
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 1rem;
+  box-shadow: 0 8px 20px rgba(17, 28, 45, 0.06);
+}
+
+.card .rank {
+  display: inline-block;
+  margin: 0 0 0.5rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 8px;
+  background: #e8eef5;
+  color: #1b3555;
+  font-weight: 700;
+}
+
+.card .price {
+  margin: 0;
+  font-size: 1.55rem;
+  color: var(--brand-2);
+}
+
+.card ul {
+  padding-left: 1rem;
+}
+
+.card li {
+  margin-bottom: 0.4rem;
+}
+
+.card .buy-btn {
+  width: 100%;
+  text-align: center;
+  margin-top: 0.5rem;
+  color: #fff;
+  background: var(--ok);
+}
+
+.card .buy-btn[disabled] {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.payments-box {
+  margin-top: 1rem;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  overflow: auto;
+}
+
+.payments-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.payments-table th,
+.payments-table td {
+  text-align: left;
+  padding: 0.7rem;
+  border-bottom: 1px solid #eef2f7;
+}
+
+.badge-status {
+  font-weight: 700;
+  font-size: 0.85rem;
+  border-radius: 999px;
+  padding: 0.2rem 0.55rem;
+  display: inline-block;
+}
+
+.badge-status.pending {
+  color: #7f5100;
+  background: #fff4d9;
+}
+
+.badge-status.paid {
+  color: #0d5f35;
+  background: #dcf7e8;
+}
+
+.features {
+  margin-top: 1rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+}
+
+.features article {
+  border-left: 4px solid var(--brand);
+  background: #eff4f9;
+  padding: 1rem;
+  border-radius: 10px;
+}
+
+.footer {
+  text-align: center;
+  padding: 2rem 1rem 3rem;
+  background: #0d1520;
+  color: #d8e2ef;
+}
+
+.footer a {
+  color: #6ab0ff;
+}
+
+@media (max-width: 640px) {
+  .top-nav {
+    flex-wrap: wrap;
+  }
+
+  .hero-content {
+    margin-top: 1.5rem;
+  }
+}

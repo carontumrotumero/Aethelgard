@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Aethelgard | Rangos Minecraft Geopolítico</title>
+    <meta
+      name="description"
+      content="Compra rangos para Aethelgard, el servidor geopolítico de Minecraft inspirado en la edad actual."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&family=Source+Sans+3:wght@400;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="hero">
+      <nav class="top-nav">
+        <h1>Aethelgard</h1>
+        <div class="nav-actions" id="nav-actions">
+          <a class="btn btn-outline" href="/auth/microsoft" id="login-link">Iniciar sesión</a>
+        </div>
+      </nav>
+      <div class="hero-content">
+        <p class="badge">Servidor geopolítico de la edad actual</p>
+        <h2>Sube tu estatus. Lidera tu nación.</h2>
+        <p>
+          Obtén rangos exclusivos y destaca en la diplomacia, economía y estrategia del mundo de
+          Aethelgard.
+        </p>
+        <a class="btn btn-main" href="#rangos">Comprar rangos</a>
+      </div>
+    </header>
+
+    <main>
+      <section class="section auth-section" id="auth-section">
+        <div class="section-title">
+          <h3>Estado de tu cuenta</h3>
+        </div>
+        <p id="session-text">Comprobando sesión...</p>
+        <p class="status-message" id="status-message"></p>
+      </section>
+
+      <section id="rangos" class="section">
+        <div class="section-title">
+          <h3>Rangos disponibles</h3>
+          <p>Debes iniciar sesión con tu cuenta de Minecraft para comprar.</p>
+        </div>
+        <div class="cards" id="cards-container"></div>
+      </section>
+
+      <section class="section section-alt">
+        <div class="section-title">
+          <h3>Mis pagos</h3>
+          <p>Historial de rangos registrados para tu cuenta.</p>
+        </div>
+        <div class="payments-box" id="payments-box">
+          <p>Inicia sesión para ver tus pagos.</p>
+        </div>
+      </section>
+
+      <section class="section section-alt">
+        <div class="section-title">
+          <h3>Por qué apoyar Aethelgard</h3>
+        </div>
+        <div class="features">
+          <article>
+            <h4>Eventos geopolíticos</h4>
+            <p>Guerras, tratados, elecciones y crisis globales inspiradas en el mundo moderno.</p>
+          </article>
+          <article>
+            <h4>Comunidad activa</h4>
+            <p>Participa en alianzas, debates y comercio con jugadores de varias regiones.</p>
+          </article>
+          <article>
+            <h4>Mejora constante</h4>
+            <p>Cada compra ayuda a mantener el servidor online y a financiar nuevas mecánicas.</p>
+          </article>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <p>IP del servidor: <strong>play.aethelgard.net</strong></p>
+      <p>
+        ¿Dudas? Contáctanos en Discord:
+        <a href="#" aria-label="Discord de Aethelgard">discord.gg/aethelgard</a>
+      </p>
+    </footer>
+
+    <script src="script.js"></script>
+  </body>
+</html>
