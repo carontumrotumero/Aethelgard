@@ -20,26 +20,52 @@
     <header class="hero">
       <nav class="top-nav">
         <h1>Aethelgard</h1>
-        <div class="nav-actions" id="nav-actions">
-          <a class="btn btn-outline" href="/auth/microsoft" id="login-link">Iniciar sesión</a>
-        </div>
+        <div class="nav-actions" id="nav-actions"></div>
       </nav>
       <div class="hero-content">
-        <p class="badge">Servidor geopolítico de la edad actual</p>
-        <h2>Sube tu estatus. Lidera tu nación.</h2>
-        <p>
-          Obtén rangos exclusivos y destaca en la diplomacia, economía y estrategia del mundo de
-          Aethelgard.
-        </p>
-        <a class="btn btn-main" href="#rangos">Comprar rangos</a>
+        <div class="hero-copy">
+          <p class="badge">Servidor geopolítico de la edad actual</p>
+          <h2>Sube tu estatus. Lidera tu nación.</h2>
+          <p>
+            Obtén rangos exclusivos y destaca en la diplomacia, economía y estrategia del mundo de
+            Aethelgard.
+          </p>
+          <a class="btn btn-main" href="#rangos">Comprar rangos</a>
+        </div>
+        <div class="hero-logo-wrap">
+          <img class="hero-logo" src="logo-aethelgard.png" alt="Logo de Aethelgard" />
+          <div class="hero-logo-fallback" id="hero-logo-fallback">AETHELGARD</div>
+        </div>
       </div>
     </header>
 
     <main>
       <section class="section auth-section" id="auth-section">
         <div class="section-title">
-          <h3>Estado de tu cuenta</h3>
+          <h3>Iniciar sesión</h3>
+          <p>Usa tu nombre de Minecraft y una contraseña para esta web.</p>
         </div>
+
+        <div class="auth-grid">
+          <form class="auth-form" id="login-form">
+            <h4>Entrar</h4>
+            <label for="login-username">Usuario Minecraft</label>
+            <input id="login-username" name="username" required maxlength="16" />
+            <label for="login-password">Contraseña</label>
+            <input id="login-password" name="password" type="password" required minlength="6" />
+            <button class="btn btn-main" type="submit">Iniciar sesión</button>
+          </form>
+
+          <form class="auth-form" id="register-form">
+            <h4>Crear cuenta</h4>
+            <label for="register-username">Usuario Minecraft</label>
+            <input id="register-username" name="username" required maxlength="16" />
+            <label for="register-password">Contraseña</label>
+            <input id="register-password" name="password" type="password" required minlength="6" />
+            <button class="btn btn-subtle" type="submit">Registrarse</button>
+          </form>
+        </div>
+
         <p id="session-text">Comprobando sesión...</p>
         <p class="status-message" id="status-message"></p>
       </section>
@@ -47,9 +73,19 @@
       <section id="rangos" class="section">
         <div class="section-title">
           <h3>Rangos disponibles</h3>
-          <p>Debes iniciar sesión con tu cuenta de Minecraft para comprar.</p>
+          <p>Debes iniciar sesión para comprar.</p>
         </div>
         <div class="cards" id="cards-container"></div>
+      </section>
+
+      <section class="section section-alt">
+        <div class="section-title">
+          <h3>Pago manual</h3>
+          <p>Si no hay pasarela activa, paga manualmente y espera validación del admin.</p>
+        </div>
+        <div class="manual-box" id="manual-box">
+          <p>Cargando instrucciones de pago...</p>
+        </div>
       </section>
 
       <section class="section section-alt">
@@ -62,33 +98,19 @@
         </div>
       </section>
 
-      <section class="section section-alt">
+      <section class="section section-alt admin-panel" id="admin-panel">
         <div class="section-title">
-          <h3>Por qué apoyar Aethelgard</h3>
+          <h3>Panel admin</h3>
+          <p>Revisa pedidos y márcalos como pagados.</p>
         </div>
-        <div class="features">
-          <article>
-            <h4>Eventos geopolíticos</h4>
-            <p>Guerras, tratados, elecciones y crisis globales inspiradas en el mundo moderno.</p>
-          </article>
-          <article>
-            <h4>Comunidad activa</h4>
-            <p>Participa en alianzas, debates y comercio con jugadores de varias regiones.</p>
-          </article>
-          <article>
-            <h4>Mejora constante</h4>
-            <p>Cada compra ayuda a mantener el servidor online y a financiar nuevas mecánicas.</p>
-          </article>
+        <div class="payments-box" id="admin-payments-box">
+          <p>Inicia sesión como admin para gestionar pagos.</p>
         </div>
       </section>
     </main>
 
     <footer class="footer">
       <p>IP del servidor: <strong>play.aethelgard.net</strong></p>
-      <p>
-        ¿Dudas? Contáctanos en Discord:
-        <a href="#" aria-label="Discord de Aethelgard">discord.gg/aethelgard</a>
-      </p>
     </footer>
 
     <script src="script.js"></script>

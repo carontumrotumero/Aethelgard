@@ -4,9 +4,12 @@ create table if not exists public.users (
   minecraft_uuid text not null unique,
   minecraft_name text not null,
   email text,
+  password_hash text,
   created_at timestamptz not null default timezone('utc', now()),
   updated_at timestamptz not null default timezone('utc', now())
 );
+
+alter table public.users add column if not exists password_hash text;
 
 create table if not exists public.payments (
   id bigint generated always as identity primary key,

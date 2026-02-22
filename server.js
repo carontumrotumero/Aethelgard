@@ -11,11 +11,19 @@ const isProduction = process.env.NODE_ENV === "production";
 const baseUrl =
   process.env.BASE_URL ||
   (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : `http://localhost:${localPort}`);
-const redirectUri = process.env.MS_REDIRECT_URI || `${baseUrl}/auth/microsoft/callback`;
 
 const SESSION_COOKIE = "aethelgard_session";
-const OAUTH_STATE_COOKIE = "aethelgard_oauth_state";
 const SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+const paymentLinkTemplate = String(process.env.PAYMENT_LINK_TEMPLATE || "").trim();
+const manualPaymentMethod = String(process.env.MANUAL_PAYMENT_METHOD || "Bizum").trim();
+const manualPaymentDestination = String(process.env.MANUAL_PAYMENT_DESTINATION || "").trim();
+const manualPaymentNote = String(process.env.MANUAL_PAYMENT_NOTE || "").trim();
+const adminMinecraftUsers = new Set(
+  String(process.env.ADMIN_MINECRAFT_USERS || "")
+    .split(",")
+    .map((item) => item.trim().toLowerCase())
+    .filter(Boolean)
+);
 
 const ranks = [
   { name: "Ciudadano", amountEurCents: 499 },
@@ -24,13 +32,7 @@ const ranks = [
   { name: "Canciller", amountEurCents: 3499 },
 ];
 
-const requiredEnv = [
-  "MS_CLIENT_ID",
-  "MS_CLIENT_SECRET",
-  "SESSION_SECRET",
-  "SUPABASE_URL",
-  "SUPABASE_SERVICE_ROLE_KEY",
-];
+const requiredEnv = ["SESSION_SECRET", "SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"];
 for (const key of requiredEnv) {
   if (!process.env[key]) {
     console.warn(`[warn] Missing ${key}. Some features will fail until configured.`);
@@ -40,10 +42,7 @@ for (const key of requiredEnv) {
 const hasSupabase = Boolean(process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY);
 const supabase = hasSupabase
   ? createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY, {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false,
-      },
+      auth: { autoRefreshToken: false, persistSession: false },
     })
   : null;
 
@@ -68,8 +67,7 @@ function parseCookies(header) {
   }
 
   const result = {};
-  const pairs = header.split(";");
-  for (const pair of pairs) {
+  for (const pair of header.split(";")) {
     const index = pair.indexOf("=");
     if (index < 0) {
       continue;
@@ -87,8 +85,7 @@ function appendSetCookie(res, cookieValue) {
     res.setHeader("Set-Cookie", [cookieValue]);
     return;
   }
-  const next = Array.isArray(current) ? current.concat(cookieValue) : [String(current), cookieValue];
-  res.setHeader("Set-Cookie", next);
+  res.setHeader("Set-Cookie", Array.isArray(current) ? current.concat(cookieValue) : [String(current), cookieValue]);
 }
 
 function serializeCookie(name, value, options = {}) {
@@ -129,41 +126,10 @@ function verifySignedPayload(value) {
   }
 
   try {
-    const json = Buffer.from(encoded, "base64url").toString("utf8");
-    return JSON.parse(json);
+    return JSON.parse(Buffer.from(encoded, "base64url").toString("utf8"));
   } catch {
     return null;
   }
-}
-
-function setOauthStateCookie(res, state) {
-  const value = createSignedPayload({ state, exp: Date.now() + 10 * 60 * 1000 });
-  appendSetCookie(
-    res,
-    serializeCookie(OAUTH_STATE_COOKIE, value, {
-      maxAge: 10 * 60,
-      secure: isProduction,
-    })
-  );
-}
-
-function clearOauthStateCookie(res) {
-  appendSetCookie(
-    res,
-    serializeCookie(OAUTH_STATE_COOKIE, "", {
-      maxAge: 0,
-      secure: isProduction,
-    })
-  );
-}
-
-function readOauthState(req) {
-  const cookies = parseCookies(req.headers.cookie);
-  const payload = verifySignedPayload(cookies[OAUTH_STATE_COOKIE]);
-  if (!payload || payload.exp < Date.now()) {
-    return null;
-  }
-  return payload.state;
 }
 
 function setSessionCookie(res, userId) {
@@ -197,101 +163,10 @@ function readSession(req) {
   return payload;
 }
 
-function decodeJwtPayload(jwt) {
-  try {
-    const [, payload] = jwt.split(".");
-    if (!payload) {
-      return null;
-    }
-    return JSON.parse(Buffer.from(payload, "base64url").toString("utf8"));
-  } catch {
-    return null;
-  }
-}
-
-async function requestJson(url, options) {
-  const response = await fetch(url, options);
-  const text = await response.text();
-
-  let data;
-  try {
-    data = JSON.parse(text);
-  } catch {
-    data = { raw: text };
-  }
-
-  if (!response.ok) {
-    const detail = data.error_description || data.XErr || data.error || response.statusText;
-    throw new Error(`${response.status} ${detail}`);
-  }
-
-  return data;
-}
-
-async function exchangeCodeForMicrosoftToken(code) {
-  const params = new URLSearchParams({
-    client_id: process.env.MS_CLIENT_ID || "",
-    client_secret: process.env.MS_CLIENT_SECRET || "",
-    code,
-    grant_type: "authorization_code",
-    redirect_uri: redirectUri,
-    scope: "XboxLive.signin offline_access openid profile email",
-  });
-
-  return requestJson("https://login.live.com/oauth20_token.srf", {
-    method: "POST",
-    headers: { "content-type": "application/x-www-form-urlencoded" },
-    body: params.toString(),
-  });
-}
-
-async function xboxLiveAuth(msAccessToken) {
-  return requestJson("https://user.auth.xboxlive.com/user/authenticate", {
-    method: "POST",
-    headers: { "content-type": "application/json", accept: "application/json" },
-    body: JSON.stringify({
-      Properties: {
-        AuthMethod: "RPS",
-        SiteName: "user.auth.xboxlive.com",
-        RpsTicket: `d=${msAccessToken}`,
-      },
-      RelyingParty: "http://auth.xboxlive.com",
-      TokenType: "JWT",
-    }),
-  });
-}
-
-async function xboxXstsAuth(xblToken) {
-  return requestJson("https://xsts.auth.xboxlive.com/xsts/authorize", {
-    method: "POST",
-    headers: { "content-type": "application/json", accept: "application/json" },
-    body: JSON.stringify({
-      Properties: {
-        SandboxId: "RETAIL",
-        UserTokens: [xblToken],
-      },
-      RelyingParty: "rp://api.minecraftservices.com/",
-      TokenType: "JWT",
-    }),
-  });
-}
-
-async function minecraftLogin(xstsToken, userHash) {
-  return requestJson("https://api.minecraftservices.com/authentication/login_with_xbox", {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({
-      identityToken: `XBL3.0 x=${userHash};${xstsToken}`,
-    }),
-  });
-}
-
-async function minecraftProfile(mcAccessToken) {
-  return requestJson("https://api.minecraftservices.com/minecraft/profile", {
-    headers: {
-      Authorization: `Bearer ${mcAccessToken}`,
-    },
-  });
+function asyncHandler(handler) {
+  return function wrapped(req, res, next) {
+    Promise.resolve(handler(req, res, next)).catch(next);
+  };
 }
 
 function ensureSupabaseConfigured() {
@@ -302,25 +177,47 @@ function ensureSupabaseConfigured() {
   }
 }
 
-async function upsertUser(userData) {
-  ensureSupabaseConfigured();
-  const { data, error } = await supabase
-    .from("users")
-    .upsert(userData, { onConflict: "minecraft_uuid" })
-    .select("id,minecraft_uuid,minecraft_name,email")
-    .single();
+function normalizeMinecraftUsername(username) {
+  return String(username || "").trim();
+}
 
-  if (error) {
-    throw new Error(`Supabase users upsert failed: ${error.message}`);
+function isAdminUsername(username) {
+  return adminMinecraftUsers.has(normalizeMinecraftUsername(username).toLowerCase());
+}
+
+function getMinecraftKey(username) {
+  return `offline:${normalizeMinecraftUsername(username).toLowerCase()}`;
+}
+
+function isValidMinecraftUsername(username) {
+  return /^[A-Za-z0-9_]{3,16}$/.test(username);
+}
+
+function hashPassword(password) {
+  const salt = crypto.randomBytes(16).toString("hex");
+  const hash = crypto.scryptSync(password, salt, 64).toString("hex");
+  return `${salt}:${hash}`;
+}
+
+function verifyPassword(password, stored) {
+  const [salt, expectedHash] = String(stored || "").split(":");
+  if (!salt || !expectedHash) {
+    return false;
   }
-  return data;
+  const currentHash = crypto.scryptSync(password, salt, 64).toString("hex");
+  const a = Buffer.from(currentHash, "hex");
+  const b = Buffer.from(expectedHash, "hex");
+  if (a.length !== b.length) {
+    return false;
+  }
+  return crypto.timingSafeEqual(a, b);
 }
 
 async function getUserById(userId) {
   ensureSupabaseConfigured();
   const { data, error } = await supabase
     .from("users")
-    .select("id,minecraft_uuid,minecraft_name,email")
+    .select("id,minecraft_uuid,minecraft_name,email,password_hash")
     .eq("id", userId)
     .maybeSingle();
 
@@ -328,6 +225,42 @@ async function getUserById(userId) {
     throw new Error(`Supabase get user failed: ${error.message}`);
   }
   return data || null;
+}
+
+async function getUserByMinecraftName(username) {
+  ensureSupabaseConfigured();
+  const uuidKey = getMinecraftKey(username);
+  const { data, error } = await supabase
+    .from("users")
+    .select("id,minecraft_uuid,minecraft_name,email,password_hash")
+    .eq("minecraft_uuid", uuidKey)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(`Supabase get user by name failed: ${error.message}`);
+  }
+  return data || null;
+}
+
+async function createUser(username, password) {
+  ensureSupabaseConfigured();
+  const passwordHash = hashPassword(password);
+  const { data, error } = await supabase
+    .from("users")
+    .insert({
+      microsoft_sub: null,
+      minecraft_uuid: getMinecraftKey(username),
+      minecraft_name: username,
+      email: null,
+      password_hash: passwordHash,
+    })
+    .select("id,minecraft_uuid,minecraft_name,email,password_hash")
+    .single();
+
+  if (error) {
+    throw new Error(`Supabase create user failed: ${error.message}`);
+  }
+  return data;
 }
 
 async function insertPayment(userId, rank) {
@@ -413,16 +346,22 @@ async function markPaymentPaid(paymentId, providerRef) {
   return data;
 }
 
-function asyncHandler(handler) {
-  return function wrapped(req, res, next) {
-    Promise.resolve(handler(req, res, next)).catch(next);
-  };
+function buildPaymentLink({ paymentId, rankName, username, amountEurCents }) {
+  if (!paymentLinkTemplate) {
+    return null;
+  }
+
+  return paymentLinkTemplate
+    .replaceAll("{payment_id}", encodeURIComponent(String(paymentId)))
+    .replaceAll("{rank}", encodeURIComponent(rankName))
+    .replaceAll("{username}", encodeURIComponent(username))
+    .replaceAll("{amount_eur}", encodeURIComponent((amountEurCents / 100).toFixed(2)));
 }
 
 function requireAuth(req, res, next) {
   const session = readSession(req);
   if (!session) {
-    return res.status(401).json({ error: "Debes iniciar sesión con Minecraft." });
+    return res.status(401).json({ error: "Debes iniciar sesión." });
   }
   req.sessionUserId = session.userId;
   next();
@@ -436,57 +375,57 @@ function requireAdmin(req, res, next) {
   next();
 }
 
-app.get("/auth/microsoft", (req, res) => {
-  if (!process.env.MS_CLIENT_ID || !process.env.MS_CLIENT_SECRET) {
-    return res.status(500).send("Falta configurar MS_CLIENT_ID y MS_CLIENT_SECRET.");
+const requireAdminSession = asyncHandler(async (req, res, next) => {
+  const user = await getUserById(req.sessionUserId);
+  if (!user || !isAdminUsername(user.minecraft_name)) {
+    return res.status(403).json({ error: "Solo admins pueden hacer esto." });
   }
-
-  const state = crypto.randomBytes(16).toString("hex");
-  setOauthStateCookie(res, state);
-
-  const authUrl = new URL("https://login.live.com/oauth20_authorize.srf");
-  authUrl.searchParams.set("client_id", process.env.MS_CLIENT_ID);
-  authUrl.searchParams.set("response_type", "code");
-  authUrl.searchParams.set("redirect_uri", redirectUri);
-  authUrl.searchParams.set("scope", "XboxLive.signin offline_access openid profile email");
-  authUrl.searchParams.set("state", state);
-
-  res.redirect(authUrl.toString());
+  req.sessionUser = user;
+  next();
 });
 
-app.get(
-  "/auth/microsoft/callback",
+app.post(
+  "/auth/register",
   asyncHandler(async (req, res) => {
-    const { code, state } = req.query;
-    const storedState = readOauthState(req);
-    clearOauthStateCookie(res);
+    const username = normalizeMinecraftUsername(req.body.username);
+    const password = String(req.body.password || "");
 
-    if (!code || !state || !storedState || String(state) !== storedState) {
-      return res.status(400).send("Callback inválido de Microsoft OAuth.");
+    if (!isValidMinecraftUsername(username)) {
+      return res.status(400).json({ error: "El usuario debe parecer un nombre válido de Minecraft (3-16, letras/números/_)." });
     }
 
-    const msTokens = await exchangeCodeForMicrosoftToken(String(code));
-    const idPayload = msTokens.id_token ? decodeJwtPayload(msTokens.id_token) : null;
-
-    const xbl = await xboxLiveAuth(msTokens.access_token);
-    const xsts = await xboxXstsAuth(xbl.Token);
-    const userHash = xsts.DisplayClaims?.xui?.[0]?.uhs;
-    if (!userHash) {
-      throw new Error("No se pudo leer userHash de Xbox.");
+    if (password.length < 6) {
+      return res.status(400).json({ error: "La contraseña debe tener al menos 6 caracteres." });
     }
 
-    const mcLogin = await minecraftLogin(xsts.Token, userHash);
-    const profile = await minecraftProfile(mcLogin.access_token);
+    const existing = await getUserByMinecraftName(username);
+    if (existing) {
+      return res.status(409).json({ error: "Ese usuario ya está registrado." });
+    }
 
-    const user = await upsertUser({
-      microsoft_sub: idPayload?.sub || null,
-      minecraft_uuid: profile.id,
-      minecraft_name: profile.name,
-      email: idPayload?.email || null,
+    const user = await createUser(username, password);
+    setSessionCookie(res, user.id);
+
+    res.status(201).json({
+      message: "Cuenta creada correctamente.",
+      user: { id: user.id, minecraft_name: user.minecraft_name, minecraft_uuid: user.minecraft_uuid },
     });
+  })
+);
+
+app.post(
+  "/auth/login",
+  asyncHandler(async (req, res) => {
+    const username = normalizeMinecraftUsername(req.body.username);
+    const password = String(req.body.password || "");
+
+    const user = await getUserByMinecraftName(username);
+    if (!user || !verifyPassword(password, user.password_hash)) {
+      return res.status(401).json({ error: "Usuario o contraseña incorrectos." });
+    }
 
     setSessionCookie(res, user.id);
-    res.redirect("/");
+    res.json({ message: "Sesión iniciada.", user: { id: user.id, minecraft_name: user.minecraft_name } });
   })
 );
 
@@ -497,6 +436,15 @@ app.get("/auth/logout", (_req, res) => {
 
 app.get("/api/ranks", (_req, res) => {
   res.json({ ranks });
+});
+
+app.get("/api/payment-instructions", (_req, res) => {
+  res.json({
+    hasExternalCheckout: Boolean(paymentLinkTemplate),
+    method: manualPaymentMethod,
+    destination: manualPaymentDestination,
+    note: manualPaymentNote,
+  });
 });
 
 app.get(
@@ -513,7 +461,15 @@ app.get(
       return res.json({ loggedIn: false, user: null });
     }
 
-    res.json({ loggedIn: true, user });
+    res.json({
+      loggedIn: true,
+      user: {
+        id: user.id,
+        minecraft_name: user.minecraft_name,
+        minecraft_uuid: user.minecraft_uuid,
+        isAdmin: isAdminUsername(user.minecraft_name),
+      },
+    });
   })
 );
 
@@ -538,17 +494,55 @@ app.post(
     }
 
     const payment = await insertPayment(req.sessionUserId, rank);
+    const user = await getUserById(req.sessionUserId);
+    const paymentUrl = buildPaymentLink({
+      paymentId: payment.id,
+      rankName: rank.name,
+      username: user?.minecraft_name || "jugador",
+      amountEurCents: rank.amountEurCents,
+    });
 
     res.status(201).json({
       paymentId: payment.id,
-      message: "Pago registrado en estado pendiente. Conecta tu pasarela para confirmación automática.",
+      paymentUrl,
+      message: paymentUrl
+        ? "Pedido creado. Te redirigimos al pago."
+        : "Pago registrado en estado pendiente. Configura PAYMENT_LINK_TEMPLATE para redirigir a pago.",
     });
+  })
+);
+
+app.post(
+  "/api/admin/grant-rank",
+  requireAuth,
+  requireAdminSession,
+  asyncHandler(async (req, res) => {
+    const rankName = String(req.body.rankName || "").trim();
+    const rank = ranks.find((item) => item.name === rankName);
+    if (!rank) {
+      return res.status(400).json({ error: "Rango inválido." });
+    }
+
+    const payment = await insertPayment(req.sessionUserId, rank);
+    await markPaymentPaid(payment.id, "admin-grant");
+
+    res.json({ ok: true, message: `Rango ${rank.name} activado gratis para admin.` });
   })
 );
 
 app.get(
   "/api/admin/payments",
   requireAdmin,
+  asyncHandler(async (_req, res) => {
+    const payments = await listAllPayments();
+    res.json({ payments });
+  })
+);
+
+app.get(
+  "/api/admin/payments-session",
+  requireAuth,
+  requireAdminSession,
   asyncHandler(async (_req, res) => {
     const payments = await listAllPayments();
     res.json({ payments });
@@ -572,6 +566,27 @@ app.post(
     }
 
     res.json({ ok: true });
+  })
+);
+
+app.post(
+  "/api/admin/payments/:id/mark-paid-session",
+  requireAuth,
+  requireAdminSession,
+  asyncHandler(async (req, res) => {
+    const paymentId = Number(req.params.id);
+    if (!Number.isInteger(paymentId) || paymentId < 1) {
+      return res.status(400).json({ error: "ID inválido." });
+    }
+
+    const providerRef = req.body.providerRef ? String(req.body.providerRef) : "manual-admin-panel";
+    const updated = await markPaymentPaid(paymentId, providerRef);
+
+    if (!updated) {
+      return res.status(404).json({ error: "Pago no encontrado." });
+    }
+
+    res.json({ ok: true, message: "Pago marcado como completado." });
   })
 );
 
