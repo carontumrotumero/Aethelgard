@@ -28,7 +28,7 @@ const adminMinecraftUsers = new Set(
 );
 
 const ranks = [
-  { name: "🔴 Superbal", amountEurCents: 700 },
+  { name: "🔴 Superball", amountEurCents: 700 },
   { name: "🔵 Ultra Ball", amountEurCents: 1200 },
   { name: "🟣 Máster ball", amountEurCents: 1500 },
   { name: "👑 Maestro", amountEurCents: 2500 },

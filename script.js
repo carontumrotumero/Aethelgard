@@ -1,6 +1,6 @@
 const ranks = [
   {
-    name: "🔴 Superbal",
+    name: "🔴 Superball",
     price: "€7.00 / mes",
     slogan: "Tu primera ventaja real en Pokerivals",
     gumroadUrl: "https://carontum.gumroad.com/l/superball",
