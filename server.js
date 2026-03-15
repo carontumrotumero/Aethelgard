@@ -18,6 +18,8 @@ const paymentLinkTemplate = String(process.env.PAYMENT_LINK_TEMPLATE || "").trim
 const manualPaymentMethod = String(process.env.MANUAL_PAYMENT_METHOD || "Bizum").trim();
 const manualPaymentDestination = String(process.env.MANUAL_PAYMENT_DESTINATION || "").trim();
 const manualPaymentNote = String(process.env.MANUAL_PAYMENT_NOTE || "").trim();
+const discordWebhookUrl = String(process.env.DISCORD_WEBHOOK_URL || "").trim();
+const gumroadPingToken = String(process.env.GUMROAD_PING_TOKEN || "").trim();
 const adminMinecraftUsers = new Set(
   String(process.env.ADMIN_MINECRAFT_USERS || "")
     .split(",")
@@ -26,9 +28,10 @@ const adminMinecraftUsers = new Set(
 );
 
 const ranks = [
-  { name: "🪲 Principiante", amountEurCents: 300 },
-  { name: "🦚 Entrenador", amountEurCents: 1000 },
-  { name: "🐾 Maestro pokemon", amountEurCents: 2000 },
+  { name: "🔴 Superbal", amountEurCents: 700 },
+  { name: "🔵 Ultra Ball", amountEurCents: 1200 },
+  { name: "🟣 Máster ball", amountEurCents: 1500 },
+  { name: "👑 Maestro", amountEurCents: 2500 },
 ];
 
 const extras = [
@@ -51,11 +54,70 @@ const supabase = hasSupabase
   : null;
 
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 app.use(express.static(__dirname));
 
 app.get("/", (_req, res) => {
   res.sendFile("index.html", { root: __dirname });
 });
+
+function formatCurrencyAmount(value, currency = "EUR") {
+  if (value === undefined || value === null || value === "") {
+    return null;
+  }
+  const raw = String(value).trim();
+  if (/^\\d+$/.test(raw)) {
+    const cents = Number(raw);
+    return `${(cents / 100).toFixed(2)} ${currency}`;
+  }
+  return `${raw} ${currency}`;
+}
+
+function isValidGumroadPing(req) {
+  if (!gumroadPingToken) {
+    return true;
+  }
+  return String(req.query?.token || "") === gumroadPingToken;
+}
+
+app.post(
+  "/api/gumroad/ping",
+  asyncHandler(async (req, res) => {
+    if (!isValidGumroadPing(req)) {
+      res.status(401).json({ error: "Unauthorized" });
+      return;
+    }
+
+    const payload = req.body || {};
+    const productName = payload.product_name || payload.product || payload.productName;
+    const buyerEmail = payload.email || payload.buyer_email || payload.buyerEmail;
+    const currency = payload.currency || payload.sale_currency || "EUR";
+    const price = formatCurrencyAmount(payload.price || payload.price_cents || payload.amount, currency);
+    const isTest =
+      String(payload.test || payload.is_test || payload.test_purchase || "").toLowerCase() === "true";
+
+    if (discordWebhookUrl) {
+      const lines = ["Nueva compra en Gumroad" + (isTest ? " (test)" : "")];
+      if (productName) {
+        lines.push(`Producto: ${productName}`);
+      }
+      if (price) {
+        lines.push(`Importe: ${price}`);
+      }
+      if (buyerEmail) {
+        lines.push(`Email: ${buyerEmail}`);
+      }
+
+      await fetch(discordWebhookUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content: lines.join("\\n") }),
+      });
+    }
+
+    res.json({ ok: true });
+  })
+);
 
 function getSigningSecret() {
   return process.env.SESSION_SECRET || "change-me";
