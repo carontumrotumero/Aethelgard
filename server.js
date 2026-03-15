@@ -124,6 +124,7 @@ app.post(
     const payload = req.body || {};
     const productName = payload.product_name || payload.product || payload.productName;
     const buyerEmail = payload.email || payload.buyer_email || payload.buyerEmail;
+    const buyerName = payload.name || payload.buyer_name || payload.full_name;
     const currency = payload.currency || payload.sale_currency || "EUR";
     const price = formatCurrencyAmount(payload.price || payload.price_cents || payload.amount, currency);
     const discordHandle = extractDiscordHandle(payload);
@@ -143,6 +144,8 @@ app.post(
       }
       if (discordHandle) {
         lines.push(`Discord: ${discordHandle}`);
+      } else if (buyerName) {
+        lines.push(`Nombre (checkout): ${buyerName}`);
       }
 
       await fetch(discordWebhookUrl, {
