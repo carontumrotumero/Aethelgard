@@ -1,23 +1,41 @@
 const ranks = [
   {
-    name: "Ciudadano",
-    price: "€4.99 / mes",
-    perks: ["🏡 1 /home extra", "🔫 1 fusil", "🛡️ 1 kit de armadura"],
+    name: "🔴 Superbal",
+    price: "€7.00 / mes",
+    slogan: "Tu primera ventaja real en Pokerivals",
+    perks: ["💰 $100 de saldo inicial", "⚪ 1 pokebola comun"],
   },
   {
-    name: "Diplomático",
-    price: "€9.99 / mes",
-    perks: ["🏡 2 /home extra", "🔫 3 fusiles", "🛡️ 2 kit de armadura"],
+    name: "🔵 Ultra Ball",
+    price: "€12.00 / mes",
+    slogan: "Mejor captura, mejor progreso",
+    perks: ["💰 $200 de saldo inicial", "🔵 1 pokebola rara"],
   },
   {
-    name: "Senador",
-    price: "€19.99 / mes",
-    perks: ["🏡 3 /home extra", "🔫 5 fusiles", "🛡️ 5 kit de armadura"],
+    name: "🟣 Máster ball",
+    price: "€15.00 / mes",
+    slogan: "Preparado para competir en serio",
+    topTag: "MAS COMPLETO",
+    perks: ["💰 $500 de saldo inicial", "🔵 Soporte prioritario en Discord", "🔵 2 pokebolas raras"],
   },
   {
-    name: "Canciller",
-    price: "€34.99 / mes",
-    perks: ["🪽 /t fly", "🏡 3 /home extra", "🔫 10 fusiles", "🛡️ 10 kits de armadura"],
+    name: "👑 Maestro",
+    price: "€25.00 / mes",
+    slogan: "El rango definitivo para dominar",
+    perks: ["Beneficios por definir"],
+  },
+];
+
+const extras = [
+  {
+    name: "🎯 5 master balls",
+    price: "€10.00",
+    description: "Pack de 5 master balls para capturas premium.",
+  },
+  {
+    name: "✨ Pokemon legendario 6x31",
+    price: "€5.00",
+    description: "Pokemon legendario 6x31 (menos fusiones).",
   },
 ];
 
@@ -31,9 +49,40 @@ const registerForm = document.getElementById("register-form");
 const manualBox = document.getElementById("manual-box");
 const adminPanel = document.getElementById("admin-panel");
 const adminPaymentsBox = document.getElementById("admin-payments-box");
+const extrasContainer = document.getElementById("extras-container");
+const themeToggle = document.getElementById("theme-toggle");
+const themeIcon = document.getElementById("theme-icon");
+const themeLabel = document.getElementById("theme-label");
 
 let currentSession = { loggedIn: false, user: null };
 let paymentInstructions = null;
+
+function getPreferredTheme() {
+  const saved = localStorage.getItem("pokerivals-theme");
+  if (saved === "light" || saved === "dark") {
+    return saved;
+  }
+  return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+}
+
+function applyTheme(theme, persist = false) {
+  const finalTheme = theme === "dark" ? "dark" : "light";
+  document.body.setAttribute("data-theme", finalTheme);
+
+  if (themeIcon && themeLabel) {
+    if (finalTheme === "dark") {
+      themeIcon.textContent = "🌙";
+      themeLabel.textContent = "Oscuro";
+    } else {
+      themeIcon.textContent = "☀️";
+      themeLabel.textContent = "Luz";
+    }
+  }
+
+  if (persist) {
+    localStorage.setItem("pokerivals-theme", finalTheme);
+  }
+}
 
 function setStatus(message) {
   statusMessage.textContent = message || "";
@@ -69,26 +118,50 @@ function renderNav() {
 function renderCards() {
   cardsContainer.innerHTML = "";
 
-  ranks.forEach((rank) => {
+  ranks.forEach((rank, index) => {
     const card = document.createElement("article");
     card.className = "card";
+    card.style.setProperty("--stagger", String(index));
 
     card.innerHTML = `
-      <p class="rank">${rank.name}</p>
+      <div class="card-head">
+        ${rank.topTag ? `<p class="rank-top-tag">${rank.topTag}</p>` : ""}
+        <p class="rank">${rank.name}</p>
+        <p class="card-slogan">${rank.slogan || ""}</p>
+        <button class="card-toggle" type="button" data-toggle="${rank.name}" aria-expanded="false">
+          Ver beneficios
+          <span class="chevron">⌄</span>
+        </button>
+      </div>
       <p class="price">${rank.price}</p>
-      <ul>${rank.perks.map((perk) => `<li>${perk}</li>`).join("")}</ul>
-      <button class="btn buy-btn" data-rank="${rank.name}" ${currentSession.loggedIn ? "" : "disabled"}>
-        ${
-          currentSession.loggedIn
-            ? currentSession.user?.isAdmin
-              ? `Activar ${rank.name} gratis`
-              : `Comprar ${rank.name}`
-            : "Inicia sesión para comprar"
-        }
-      </button>
+      <div class="card-body-wrap">
+        <div class="card-body">
+          <ul>${rank.perks.map((perk) => `<li>${perk}</li>`).join("")}</ul>
+          <button class="btn buy-btn" data-rank="${rank.name}" ${currentSession.loggedIn ? "" : "disabled"}>
+            ${
+              currentSession.loggedIn
+                ? currentSession.user?.isAdmin
+                  ? `Activar ${rank.name} gratis`
+                  : `Comprar ${rank.name}`
+                : "Inicia sesión para comprar"
+            }
+          </button>
+        </div>
+      </div>
     `;
 
     cardsContainer.appendChild(card);
+  });
+
+  document.querySelectorAll(".card-toggle[data-toggle]").forEach((toggle) => {
+    toggle.addEventListener("click", () => {
+      const card = toggle.closest(".card");
+      if (!card) {
+        return;
+      }
+      card.classList.toggle("is-open");
+      toggle.setAttribute("aria-expanded", String(card.classList.contains("is-open")));
+    });
   });
 
   document.querySelectorAll(".buy-btn[data-rank]").forEach((button) => {
@@ -111,6 +184,66 @@ function renderCards() {
           setStatus(
             `${data.message} Usa como concepto: Pedido #${data.paymentId} - ${currentSession.user.minecraft_name}`
           );
+        }
+        await loadPayments();
+        if (currentSession.user?.isAdmin) {
+          await loadAdminPayments();
+        }
+      } catch (error) {
+        setStatus(error.message);
+      }
+    });
+  });
+}
+
+function renderExtras() {
+  if (!extrasContainer) {
+    return;
+  }
+
+  extrasContainer.innerHTML = "";
+
+  extras.forEach((extra, index) => {
+    const card = document.createElement("article");
+    card.className = "card";
+    card.style.setProperty("--stagger", String(index));
+
+    card.innerHTML = `
+      <div class="card-head">
+        <p class="rank">${extra.name}</p>
+      </div>
+      <p class="price">${extra.price}</p>
+      <p>${extra.description}</p>
+      <button class="btn buy-btn" data-extra="${extra.name}" ${currentSession.loggedIn ? "" : "disabled"}>
+        ${
+          currentSession.loggedIn
+            ? currentSession.user?.isAdmin
+              ? `Activar ${extra.name} gratis`
+              : `Comprar ${extra.name}`
+            : "Inicia sesión para comprar"
+        }
+      </button>
+    `;
+
+    extrasContainer.appendChild(card);
+  });
+
+  document.querySelectorAll(".buy-btn[data-extra]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      const extraName = button.getAttribute("data-extra");
+      setStatus(currentSession.user?.isAdmin ? "Activando extra..." : "Registrando compra...");
+
+      try {
+        const url = currentSession.user?.isAdmin ? "/api/admin/grant-extra" : "/api/extras/purchase";
+        const data = await fetchJson(url, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ extraName }),
+        });
+
+        setStatus(data.message);
+        if (data.paymentUrl) {
+          window.open(data.paymentUrl, "_blank", "noopener,noreferrer");
         }
         await loadPayments();
         if (currentSession.user?.isAdmin) {
@@ -267,6 +400,7 @@ async function loadSession() {
 
   renderNav();
   renderCards();
+  renderExtras();
   await loadPaymentInstructions();
   await loadPayments();
   await loadAdminPayments();
@@ -321,6 +455,15 @@ if (heroLogo && heroLogoFallback) {
   heroLogo.addEventListener("error", () => {
     heroLogo.style.display = "none";
     heroLogoFallback.style.display = "block";
+  });
+}
+
+applyTheme(getPreferredTheme());
+
+if (themeToggle) {
+  themeToggle.addEventListener("click", () => {
+    const nextTheme = document.body.getAttribute("data-theme") === "dark" ? "light" : "dark";
+    applyTheme(nextTheme, true);
   });
 }
 

@@ -26,10 +26,14 @@ const adminMinecraftUsers = new Set(
 );
 
 const ranks = [
-  { name: "Ciudadano", amountEurCents: 499 },
-  { name: "Diplomático", amountEurCents: 999 },
-  { name: "Senador", amountEurCents: 1999 },
-  { name: "Canciller", amountEurCents: 3499 },
+  { name: "🪲 Principiante", amountEurCents: 300 },
+  { name: "🦚 Entrenador", amountEurCents: 1000 },
+  { name: "🐾 Maestro pokemon", amountEurCents: 2000 },
+];
+
+const extras = [
+  { name: "🎯 5 master balls", amountEurCents: 1000 },
+  { name: "✨ Pokemon legendario 6x31", amountEurCents: 500 },
 ];
 
 const requiredEnv = ["SESSION_SECRET", "SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"];
@@ -438,6 +442,10 @@ app.get("/api/ranks", (_req, res) => {
   res.json({ ranks });
 });
 
+app.get("/api/extras", (_req, res) => {
+  res.json({ extras });
+});
+
 app.get("/api/payment-instructions", (_req, res) => {
   res.json({
     hasExternalCheckout: Boolean(paymentLinkTemplate),
@@ -513,6 +521,35 @@ app.post(
 );
 
 app.post(
+  "/api/extras/purchase",
+  requireAuth,
+  asyncHandler(async (req, res) => {
+    const extraName = String(req.body.extraName || "").trim();
+    const extra = extras.find((item) => item.name === extraName);
+    if (!extra) {
+      return res.status(400).json({ error: "Extra inválido." });
+    }
+
+    const payment = await insertPayment(req.sessionUserId, extra);
+    const user = await getUserById(req.sessionUserId);
+    const paymentUrl = buildPaymentLink({
+      paymentId: payment.id,
+      rankName: extra.name,
+      username: user?.minecraft_name || "jugador",
+      amountEurCents: extra.amountEurCents,
+    });
+
+    res.status(201).json({
+      paymentId: payment.id,
+      paymentUrl,
+      message: paymentUrl
+        ? "Pedido creado. Te redirigimos al pago."
+        : "Compra registrada en estado pendiente.",
+    });
+  })
+);
+
+app.post(
   "/api/admin/grant-rank",
   requireAuth,
   requireAdminSession,
@@ -527,6 +564,24 @@ app.post(
     await markPaymentPaid(payment.id, "admin-grant");
 
     res.json({ ok: true, message: `Rango ${rank.name} activado gratis para admin.` });
+  })
+);
+
+app.post(
+  "/api/admin/grant-extra",
+  requireAuth,
+  requireAdminSession,
+  asyncHandler(async (req, res) => {
+    const extraName = String(req.body.extraName || "").trim();
+    const extra = extras.find((item) => item.name === extraName);
+    if (!extra) {
+      return res.status(400).json({ error: "Extra inválido." });
+    }
+
+    const payment = await insertPayment(req.sessionUserId, extra);
+    await markPaymentPaid(payment.id, "admin-grant-extra");
+
+    res.json({ ok: true, message: `${extra.name} activado gratis para admin.` });
   })
 );
 

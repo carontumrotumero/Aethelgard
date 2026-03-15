@@ -3,10 +3,10 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Aethelgard | Rangos Minecraft Geopolítico</title>
+    <title>Pokerivals | Rangos Minecraft Inspirado en Pokemon</title>
     <meta
       name="description"
-      content="Compra rangos para Aethelgard, el servidor geopolítico de Minecraft inspirado en la edad actual."
+      content="Compra rangos y extras para Pokerivals, servidor de Minecraft inspirado en Pokemon."
     />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -19,23 +19,34 @@
   <body>
     <header class="hero">
       <nav class="top-nav">
-        <h1>Aethelgard</h1>
-        <div class="nav-actions" id="nav-actions"></div>
+        <h1>Pokerivals</h1>
+        <div class="nav-right">
+          <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Cambiar tema">
+            <span id="theme-icon">☀️</span>
+            <span id="theme-label">Luz</span>
+          </button>
+          <div class="nav-actions" id="nav-actions"></div>
+        </div>
       </nav>
       <div class="hero-content">
         <div class="hero-copy">
-          <p class="badge">Servidor geopolítico de la edad actual</p>
-          <h2>Sube tu estatus. Lidera tu nación.</h2>
+          <p class="badge">Servidor de Minecraft inspirado en Pokemon</p>
+          <h2>Entrena, compite y domina Pokerivals.</h2>
           <p>
-            Obtén rangos exclusivos y destaca en la diplomacia, economía y estrategia del mundo de
-            Aethelgard.
+            Desbloquea ventajas, mejora tu progreso y consigue extras para destacar en cada aventura.
           </p>
-          <a class="btn btn-main" href="#rangos">Comprar rangos</a>
+          <a class="btn btn-main" href="#rangos">Ver tienda</a>
         </div>
-        <div class="hero-logo-wrap">
-          <img class="hero-logo" src="logo-aethelgard.png" alt="Logo de Aethelgard" />
-          <div class="hero-logo-fallback" id="hero-logo-fallback">AETHELGARD</div>
-        </div>
+        <a
+          class="hero-logo-wrap"
+          href="https://discord.gg/j7KbXhHXTm"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Unirse al Discord de Pokerivals"
+        >
+          <img class="hero-logo" src="logo-pokerivals.png" alt="Logo de Pokerivals" />
+          <div class="hero-logo-fallback" id="hero-logo-fallback">POKERIVALS</div>
+        </a>
       </div>
     </header>
 
@@ -72,10 +83,18 @@
 
       <section id="rangos" class="section">
         <div class="section-title">
-          <h3>Rangos disponibles</h3>
+          <h3>Rangos Pokemon</h3>
           <p>Debes iniciar sesión para comprar.</p>
         </div>
         <div class="cards" id="cards-container"></div>
+      </section>
+
+      <section id="extras" class="section section-alt">
+        <div class="section-title">
+          <h3>Extras</h3>
+          <p>Mejoras especiales y compras directas.</p>
+        </div>
+        <div class="cards" id="extras-container"></div>
       </section>
 
       <section class="section section-alt">
@@ -110,7 +129,7 @@
     </main>
 
     <footer class="footer">
-      <p>IP del servidor: <strong>play.aethelgard.net</strong></p>
+      <p>IP del servidor: <strong>play.pokerivals.net</strong></p>
     </footer>
 
     <script src="script.js"></script>
