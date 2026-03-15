@@ -3,6 +3,7 @@ const ranks = [
     name: "🔴 Superbal",
     price: "€7.00 / mes",
     slogan: "Tu primera ventaja real en Pokerivals",
+    gumroadUrl: "https://carontum.gumroad.com/l/superball",
     perks: [
       "16 Pokeballs",
       "8 Superballs",
@@ -15,6 +16,7 @@ const ranks = [
     name: "🔵 Ultra Ball",
     price: "€12.00 / mes",
     slogan: "Mejor captura, mejor progreso",
+    gumroadUrl: "https://carontum.gumroad.com/l/ultraball",
     perks: [
       "32 Superballs",
       "16 Ultra balls",
@@ -30,6 +32,7 @@ const ranks = [
     price: "€15.00 / mes",
     slogan: "Preparado para competir en serio",
     topTag: "MAS COMPLETO",
+    gumroadUrl: "https://carontum.gumroad.com/l/masterball",
     perks: [
       "1 Masterball mensual",
       "32 Ultra balls",
@@ -43,6 +46,7 @@ const ranks = [
     name: "👑 Maestro",
     price: "€25.00 / mes",
     slogan: "El rango definitivo para dominar",
+    gumroadUrl: "https://carontum.gumroad.com/l/maestro",
     perks: [
       "2 Masterballs",
       "64 Ultra balls",
@@ -60,11 +64,13 @@ const extras = [
     name: "🎯 5 master balls",
     price: "€10.00",
     description: "Pack de 5 master balls para capturas premium.",
+    gumroadUrl: "https://carontum.gumroad.com/l/5masterballs",
   },
   {
     name: "✨ Pokemon legendario 6x31",
     price: "€5.00",
     description: "Pokemon legendario 6x31 (menos fusiones).",
+    gumroadUrl: "https://carontum.gumroad.com/l/pokemonlegendario",
   },
 ];
 
@@ -199,6 +205,15 @@ function renderCards() {
       setStatus(currentSession.user?.isAdmin ? "Activando rango..." : "Registrando compra...");
 
       try {
+        if (!currentSession.user?.isAdmin) {
+          const rank = ranks.find((item) => item.name === rankName);
+          if (rank?.gumroadUrl) {
+            window.open(rank.gumroadUrl, "_blank", "noopener,noreferrer");
+            setStatus("Abriendo pago en Gumroad...");
+            return;
+          }
+        }
+
         const url = currentSession.user?.isAdmin ? "/api/admin/grant-rank" : "/api/payments";
         const data = await fetchJson(url, {
           method: "POST",
@@ -263,6 +278,15 @@ function renderExtras() {
       setStatus(currentSession.user?.isAdmin ? "Activando extra..." : "Registrando compra...");
 
       try {
+        if (!currentSession.user?.isAdmin) {
+          const extra = extras.find((item) => item.name === extraName);
+          if (extra?.gumroadUrl) {
+            window.open(extra.gumroadUrl, "_blank", "noopener,noreferrer");
+            setStatus("Abriendo pago en Gumroad...");
+            return;
+          }
+        }
+
         const url = currentSession.user?.isAdmin ? "/api/admin/grant-extra" : "/api/extras/purchase";
         const data = await fetchJson(url, {
           method: "POST",
