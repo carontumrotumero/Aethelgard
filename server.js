@@ -73,6 +73,39 @@ function formatCurrencyAmount(value, currency = "EUR") {
   return `${raw} ${currency}`;
 }
 
+function extractDiscordHandle(payload) {
+  if (!payload) {
+    return null;
+  }
+
+  const fromCustomFields = payload.custom_fields;
+  if (fromCustomFields) {
+    let fields = fromCustomFields;
+    if (typeof fromCustomFields === "string") {
+      try {
+        fields = JSON.parse(fromCustomFields);
+      } catch {
+        fields = null;
+      }
+    }
+    if (fields && typeof fields === "object") {
+      for (const [key, value] of Object.entries(fields)) {
+        if (String(key).toLowerCase().includes("discord") && value) {
+          return String(value).trim();
+        }
+      }
+    }
+  }
+
+  for (const [key, value] of Object.entries(payload)) {
+    if (String(key).toLowerCase().includes("discord") && value) {
+      return String(value).trim();
+    }
+  }
+
+  return null;
+}
+
 function isValidGumroadPing(req) {
   if (!gumroadPingToken) {
     return true;
@@ -93,6 +126,7 @@ app.post(
     const buyerEmail = payload.email || payload.buyer_email || payload.buyerEmail;
     const currency = payload.currency || payload.sale_currency || "EUR";
     const price = formatCurrencyAmount(payload.price || payload.price_cents || payload.amount, currency);
+    const discordHandle = extractDiscordHandle(payload);
     const isTest =
       String(payload.test || payload.is_test || payload.test_purchase || "").toLowerCase() === "true";
 
@@ -106,6 +140,9 @@ app.post(
       }
       if (buyerEmail) {
         lines.push(`Email: ${buyerEmail}`);
+      }
+      if (discordHandle) {
+        lines.push(`Discord: ${discordHandle}`);
       }
 
       await fetch(discordWebhookUrl, {
