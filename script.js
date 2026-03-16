@@ -73,7 +73,7 @@ const extras = [
     gumroadUrl: "https://carontum.gumroad.com/l/pokemonlegendario",
   },
   {
-    name: "👾 Ditto perfecto",
+    name: "🟣 Ditto perfecto",
     price: "€12.99",
     description: "Ideal para criar y mejorar tu equipo desde el primer dia.",
     gumroadUrl: "https://carontum.gumroad.com/l/dittoperfecto",
